@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tabletop-price-watch"
+version = "0.1.0"
+description = "Collect and compare board game offers from three US retailers."
+requires-python = ">=3.11"
+dependencies = ["beautifulsoup4>=4.13,<5", "requests>=2.32.5,<3"]
+
+[project.scripts]
+tabletop-price-watch = "tabletop_price_watch.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

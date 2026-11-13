@@ -1,0 +1,119 @@
+[
+  {
+    "id": "ark-nova",
+    "name": "Ark Nova",
+    "type": "Base game",
+    "upc": "850000576407",
+    "mpn": "FS5100",
+    "offers": {
+      "miniature_market": "https://www.miniaturemarket.com/csgfs5100.html",
+      "cardhaus": "https://www.cardhaus.com/ark-nova/?setCurrencyId=1",
+      "noble_knight": "https://www.nobleknight.com/P/2147955535/Ark-Nova-2nd-Printing?SS=USD"
+    }
+  },
+  {
+    "id": "marine-worlds",
+    "name": "Ark Nova: Marine Worlds",
+    "type": "Expansion",
+    "mpn": "FS5120",
+    "offers": {
+      "miniature_market": "https://www.miniaturemarket.com/ark-nova-marine-worlds-expansion-csgfs5120.html",
+      "cardhaus": "https://www.cardhaus.com/ark-nova-marine-worlds/?setCurrencyId=1",
+      "noble_knight": "https://www.nobleknight.com/P/2148090409/Ark-Nova---Marine-Worlds-Expansion?SS=USD"
+    },
+    "upc": "850045365226"
+  },
+  {
+    "id": "zoo-map-1",
+    "name": "Ark Nova: Zoo Map Pack 1",
+    "type": "Expansion",
+    "upc": "850000576537",
+    "mpn": "FS5101",
+    "offers": {
+      "miniature_market": "https://www.miniaturemarket.com/csgfs5101.html",
+      "noble_knight": "https://www.nobleknight.com/P/2148008651/Ark-Nova---Zoo-Map-Pack-1?SS=USD"
+    }
+  },
+  {
+    "id": "cascadia",
+    "name": "Cascadia",
+    "type": "Base game",
+    "upc": "729220070982",
+    "mpn": "AEG7098",
+    "offers": {
+      "miniature_market": "https://www.miniaturemarket.com/aeg7098.html",
+      "cardhaus": "https://www.cardhaus.com/cascadia/?setCurrencyId=1",
+      "noble_knight": "https://www.nobleknight.com/P/2147886581/Cascadia?SS=USD"
+    }
+  },
+  {
+    "id": "landmarks",
+    "name": "Cascadia: Landmarks",
+    "type": "Expansion",
+    "mpn": "AEG1034",
+    "offers": {
+      "miniature_market": "https://www.miniaturemarket.com/cascadia-landmarks-expansion-aeg1034.html",
+      "noble_knight": "https://www.nobleknight.com/P/2148082690/Landmarks-Expansion?SS=USD"
+    }
+  },
+  {
+    "id": "finspan",
+    "name": "Finspan",
+    "type": "Base game",
+    "upc": "850032180931",
+    "mpn": "STM870",
+    "offers": {
+      "miniature_market": "https://www.miniaturemarket.com/finspan-stm870.html",
+      "cardhaus": "https://www.cardhaus.com/finspan/?setCurrencyId=1",
+      "noble_knight": "https://www.nobleknight.com/P/2148249233/Finspan?SS=USD"
+    }
+  },
+  {
+    "id": "wyrmspan",
+    "name": "Wyrmspan",
+    "type": "Base game",
+    "upc": "850032180788",
+    "mpn": "STM850",
+    "offers": {
+      "miniature_market": "https://www.miniaturemarket.com/wyrmspan-stm850.html",
+      "cardhaus": "https://www.cardhaus.com/wyrmspan/?setCurrencyId=1",
+      "noble_knight": "https://www.nobleknight.com/P/2148122744/Wyrmspan?SS=USD"
+    }
+  },
+  {
+    "id": "wingspan",
+    "name": "Wingspan with Swift-Start",
+    "type": "Base game",
+    "mpn": "STM910",
+    "offers": {
+      "miniature_market": "https://www.miniaturemarket.com/stm910.html",
+      "cardhaus": "https://www.cardhaus.com/wingspan-revised-edition/?setCurrencyId=1",
+      "noble_knight": "https://www.nobleknight.com/P/2147774550/Wingspan-w-Swift-Start-Pack?SS=USD"
+    },
+    "upc": "644216627721"
+  },
+  {
+    "id": "azul-duel",
+    "name": "Azul Duel",
+    "type": "Base game",
+    "mpn": "NMG60160EN",
+    "offers": {
+      "miniature_market": "https://www.miniaturemarket.com/azul-duel-nmg60160en.html",
+      "cardhaus": "https://www.cardhaus.com/azul-duel/?setCurrencyId=1",
+      "noble_knight": "https://www.nobleknight.com/P/2148250753/Azul-Duel?SS=USD"
+    },
+    "upc": "826956601609"
+  },
+  {
+    "id": "azul-mini",
+    "name": "Azul Mini",
+    "type": "Base game",
+    "mpn": "NMG60140EN",
+    "offers": {
+      "miniature_market": "https://www.miniaturemarket.com/azul-mini-nmg60140en.html",
+      "cardhaus": "https://www.cardhaus.com/azul-mini/?setCurrencyId=1",
+      "noble_knight": "https://www.nobleknight.com/P/2148039960/Azul-Mini?SS=USD"
+    },
+    "upc": "826956601401"
+  }
+]
