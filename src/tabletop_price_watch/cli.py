@@ -4,7 +4,6 @@ import json
 import logging
 import time
 from datetime import datetime, timezone
-from email.utils import parsedate_to_datetime
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from urllib.parse import urlsplit
@@ -12,11 +11,13 @@ from urllib.robotparser import RobotFileParser
 
 import requests
 
+from .rates import collect_rates
 from .retailers import RETAILERS, parse_offer
 
 USER_AGENT = "TabletopPriceWatch/0.1"
 FIELDS = ("Game", "Type", "Retailer", "Price USD", "Availability", "Listing title", "Source ID",
-          "Identity check", "Source URL", "Run started UTC", "Detail", "Offer key")
+          "Identity check", "Source URL", "Run started UTC", "Detail", "Offer key",
+          "Market", "Local price", "Currency", "USD per unit", "FX date", "FX source")
 logger = logging.getLogger(__name__)
 
 
@@ -89,13 +90,16 @@ def verify_identity(game: dict, offer) -> str:
     raise ValueError(f"missing independently verified {offer.method}")
 
 
-def collect(catalog: list[dict], observed: str) -> list[list]:
+def collect(catalog: list[dict], observed: datetime) -> list[list]:
     rows = {}
     with requests.Session() as session:
         session.headers["User-Agent"] = USER_AGENT
         session.trust_env = False
-        for key, (label, host) in RETAILERS.items():
-            client = StoreClient(session, host)
+        rates = collect_rates(session, observed)
+        run_started = observed.isoformat(timespec="seconds")
+        for key, retailer in RETAILERS.items():
+            client = StoreClient(session, retailer.host)
+            rate = rates.get(retailer.currency)
             robots_error = ""
             try:
                 client.load_robots()
@@ -104,7 +108,7 @@ def collect(catalog: list[dict], observed: str) -> list[list]:
             for game in catalog:
                 url = game["offers"].get(key, "")
                 title = identity = method = detail = ""
-                price = None
+                price = usd_price = None
                 status = "No listing"
                 if url:
                     try:
@@ -114,13 +118,22 @@ def collect(catalog: list[dict], observed: str) -> list[list]:
                         title, identity = offer.title, offer.identity
                         method = verify_identity(game, offer)
                         price, status = offer.price, offer.status
+                        if price is not None:
+                            if rate is None:
+                                detail = f"{retailer.currency} reference rate unavailable"
+                            else:
+                                usd_price = rate.to_usd(price)
                     except (KeyError, TypeError, ValueError) as exc:
                         status, detail = "Review required", str(exc)
                     except (SourceError, requests.RequestException) as exc:
                         status, detail = "Fetch failed", str(exc)
-                rows[game["id"], key] = [game["name"], game["type"], label, price, status, title,
-                                          identity, method, url, observed, detail, f"{game['name']}|{label}"]
-                logger.info("%s · %s · %s%s", label, game["name"], status, f" · {detail}" if detail else "")
+                rows[game["id"], key] = [
+                    game["name"], game["type"], retailer.label, usd_price, status, title, identity, method, url,
+                    run_started, detail, f"{game['name']}|{retailer.label}", retailer.market, price,
+                    retailer.currency, rate.usd_per_unit if rate else None,
+                    rate.effective_date if rate else None, rate.source if rate else "",
+                ]
+                logger.info("%s · %s · %s%s", retailer.label, game["name"], status, f" · {detail}" if detail else "")
     return [rows[game["id"], key] for game in catalog for key in RETAILERS]
 
 
@@ -144,7 +157,7 @@ def save(path: Path, rows: list[list]) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Collect US board game offers for the Excel dashboard.")
+    parser = argparse.ArgumentParser(description="Collect US, French, and Russian board game offers for Excel.")
     parser.add_argument("--catalog", type=Path, default=Path("catalog.json"))
     parser.add_argument("--data-dir", type=Path, default=Path("data"))
     args = parser.parse_args()
@@ -153,10 +166,10 @@ def main() -> int:
     if not catalog or any(len({game[field] for game in catalog}) != len(catalog) for field in ("id", "name")):
         parser.error("catalog must have at least one game and unique IDs and names")
     start = datetime.now(timezone.utc)
-    rows = collect(catalog, start.isoformat(timespec="seconds"))
+    rows = collect(catalog, start)
     history = args.data_dir / "history" / f"{start:%Y%m%dT%H%M%S%fZ}.csv"
     save(history, rows)
-    usable = sum(row[4] in {"In stock", "Out of stock", "No new copy", "Preorder", "Backorder"} for row in rows)
+    usable = sum(bool(row[7]) for row in rows)
     if usable:
         save(args.data_dir / "latest.csv", rows)
     logger.info("Saved %d checked rows (%d verified offers) to %s", len(rows), usable, history)

@@ -34,3 +34,29 @@ class MatchingTests(unittest.TestCase):
         self.assertEqual(offer.price, Decimal("62.00"))
         self.assertEqual(offer.identity, "ABC123")
         self.assertEqual(offer.status, "In stock")
+
+    def test_philibert_limits_stock_detection_to_main_buy_box(self):
+        html = b"""
+        <script type="application/ld+json">
+          {"@type":"Product","name":"Finspan","gtin":"850032180931",
+           "offers":{"price":"44.95","priceCurrency":"EUR"}}
+        </script>
+        <div id="availability-after-price-container">Out of stock</div>
+        <button class="btn-add-to-cart" data-cart="1">Related item</button>"""
+        offer = parse_offer("philibert", html)
+        self.assertEqual(offer.price, Decimal("44.95"))
+        self.assertEqual(offer.status, "Out of stock")
+        self.assertEqual(verify_identity({"upc": "850032180931"}, offer), "UPC")
+
+    def test_edinorog_matches_the_new_english_offer_by_barcode(self):
+        html = """
+        <script type="application/ld+json">
+          {"@graph":[{"@type":"Product","name":"Wyrmspan на английском языке","offers":[
+            {"price":8190.0,"priceCurrency":"RUB","gtin":"850032180788",
+             "availability":"https://schema.org/OutOfStock","itemCondition":"https://schema.org/NewCondition"}
+          ]}]}
+        </script>"""
+        offer = parse_offer("edinorog", ('<meta charset="utf-8">' + html).encode())
+        self.assertEqual(offer.price, Decimal("8190.00"))
+        self.assertEqual(offer.status, "Out of stock")
+        self.assertEqual(verify_identity({"upc": "850032180788"}, offer), "UPC")

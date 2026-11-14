@@ -5,10 +5,20 @@ from decimal import Decimal
 
 from bs4 import BeautifulSoup, Tag
 
+@dataclass(frozen=True)
+class Retailer:
+    label: str
+    host: str
+    market: str
+    currency: str
+
+
 RETAILERS = {
-    "miniature_market": ("Miniature Market", "www.miniaturemarket.com"),
-    "cardhaus": ("Cardhaus", "www.cardhaus.com"),
-    "noble_knight": ("Noble Knight", "www.nobleknight.com"),
+    "miniature_market": Retailer("Miniature Market", "www.miniaturemarket.com", "United States", "USD"),
+    "cardhaus": Retailer("Cardhaus", "www.cardhaus.com", "United States", "USD"),
+    "noble_knight": Retailer("Noble Knight", "www.nobleknight.com", "United States", "USD"),
+    "philibert": Retailer("Philibert", "www.philibertnet.com", "France", "EUR"),
+    "edinorog": Retailer("Edinorog", "edinorog.shop", "Russia", "RUB"),
 }
 STOCK = {
     "InStock": "In stock", "LimitedAvailability": "In stock", "OutOfStock": "Out of stock",
@@ -30,7 +40,10 @@ def money(value: str) -> Decimal:
     value = value.strip()
     if not re.fullmatch(r"\$?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d{1,2})?", value):
         raise ValueError(f"invalid price {value!r}")
-    return Decimal(value.replace("$", "").replace(",", "")).quantize(Decimal("0.01"))
+    price = Decimal(value.replace("$", "").replace(",", "")).quantize(Decimal("0.01"))
+    if price <= 0:
+        raise ValueError("price must be positive")
+    return price
 
 
 def product_json(soup: BeautifulSoup) -> dict:
@@ -39,8 +52,10 @@ def product_json(soup: BeautifulSoup) -> dict:
             value = json.loads(script.get_text())
         except ValueError:
             continue
-        if isinstance(value, dict) and value.get("@type") == "Product":
-            return value
+        if isinstance(value, dict):
+            for item in value.get("@graph", [value]):
+                if isinstance(item, dict) and item.get("@type") == "Product":
+                    return item
     raise ValueError("Product structured data is missing")
 
 
@@ -106,7 +121,40 @@ def _noble_knight(soup: BeautifulSoup) -> Offer:
     return Offer(title, min(prices) if prices else None, "In stock" if prices else "No new copy", part, "MPN")
 
 
-PARSERS = {"miniature_market": _miniature_market, "cardhaus": _cardhaus, "noble_knight": _noble_knight}
+def _philibert(soup: BeautifulSoup) -> Offer:
+    product = product_json(soup)
+    offer = product["offers"]
+    if offer["priceCurrency"] != "EUR":
+        raise ValueError("expected EUR")
+    status = stock(offer.get("availability", ""))
+    if status == "Unknown stock":
+        availability = soup.select_one("#availability-after-price-container")
+        if availability is not None:
+            if availability.select_one("button.btn-add-to-cart[data-cart='1']:not([disabled])"):
+                status = "In stock"
+            elif "out of stock" in availability.get_text(" ", strip=True).lower():
+                status = "Out of stock"
+    return Offer(product["name"], money(str(offer["price"])), status, product.get("gtin", ""), "UPC")
+
+
+def _edinorog(soup: BeautifulSoup) -> Offer:
+    product = product_json(soup)
+    offers = product["offers"]
+    if len(offers) != 1 or offers[0].get("itemCondition") != "https://schema.org/NewCondition":
+        raise ValueError("expected one new-copy offer")
+    offer = offers[0]
+    if offer["priceCurrency"] != "RUB":
+        raise ValueError("expected RUB")
+    title = product["name"]
+    if "на английском языке" not in title.lower():
+        raise ValueError("English edition is not confirmed on the listing")
+    return Offer(title, money(str(offer["price"])), stock(offer["availability"]), offer.get("gtin", ""), "UPC")
+
+
+PARSERS = {
+    "miniature_market": _miniature_market, "cardhaus": _cardhaus, "noble_knight": _noble_knight,
+    "philibert": _philibert, "edinorog": _edinorog,
+}
 
 
 def parse_offer(retailer: str, html: bytes) -> Offer:

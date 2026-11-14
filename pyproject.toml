@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tabletop-price-watch"
-version = "0.1.0"
-description = "Collect and compare board game offers from three US retailers."
+version = "0.2.0"
+description = "Collect and compare board game offers across the United States, France, and Russia."
 requires-python = ">=3.11"
 dependencies = ["beautifulsoup4>=4.13,<5", "requests>=2.32.5,<3"]
 

@@ -1,24 +1,27 @@
 # Tabletop Price Watch
 
-Tabletop Price Watch collects public offers for board games and expansions from three US retailers. It saves dated CSV snapshots and compares verified editions in an interactive Excel workbook.
+Tabletop Price Watch compares prices for matching English-language board games and expansions in the United States, France and Russia. A Python scraper saves dated CSV snapshots with prices in local currency and USD. The Excel workbook compares the lowest in-stock offer from each market.
 
 [Download the Excel dashboard](outputs/Tabletop%20Price%20Watch.xlsx?raw=1) · [Browse the sample observations](examples/offers.csv) · [Inspect the matched catalog](catalog.json)
 
 ## What the snapshot shows
 
-The November 13, 2026 UTC snapshot checks **10 editions across three stores**. It verifies 28 listings, of which 16 have a new copy in stock. Four editions have at least two in-stock offers, including one tie.
+The November 14, 2026 UTC snapshot covers **10 editions across five retailers**. It verified 36 listings. Five editions were available in at least two markets, with two available in all three.
 
-| Example | Snapshot result |
-| --- | --- |
-| Finspan | Noble Knight listed a new copy at **$41.81**. The other two stores listed **$45.00**, a **$3.19** gap before shipping. |
-| Cascadia | Miniature Market and Cardhaus tied at **$31.99**. |
-| Three-game basket | Miniature Market **$100.98** and Cardhaus **$101.98** with estimated economy shipping. Noble Knight had two of the three games. |
+| Edition | United States | France | Russia | Spread |
+| --- | ---: | ---: | ---: | ---: |
+| Finspan | **$41.81** | €44.95 → $49.68 | ₽5,290 → $64.39 | $22.58 |
+| Ark Nova | **$61.83** | €74.90 → $82.78 | ₽8,020 → $97.62 | $35.79 |
+| Wyrmspan | **$53.64** | €64.95 → $71.78 | Out of stock | $18.14 |
+
+The spread is the difference between the highest and lowest market minima. The percentage expresses that difference relative to the lowest price. The international view uses each shop’s listed price and excludes adjustments for taxes, delivery and import duties.
 
 ## Work in Excel
 
-- **Dashboard** compares the selected basket, estimated delivery, in-stock coverage and lowest-price counts. Use the yellow game selector to inspect an edition's cheapest offer and price gap.
-- **Comparison** shows all three store prices and statuses. Change the yellow **Basket qty** cells to select items. The price gap is the highest minus the lowest in-stock price. The percentage uses the lowest price as its denominator.
-- **Offers** keeps the checked URLs, source IDs and match status for auditing. Missing listings and unavailable new copies stay visible. Only verified in-stock offers can win a comparison.
+- **Dashboard** compares one edition. The yellow selector updates the chart, local and converted prices, availability and the amount above the cheapest available offer.
+- **Markets** compares every edition at once. Each market column shows the lowest verified in-stock price in USD. Blank cells indicate that the snapshot contains no qualifying price for that edition and market. A single qualifying market has a price and no spread.
+- **US Basket** estimates local economy delivery. Change the yellow **Basket qty** cells on **Comparison** to compare the three US retailers for your basket.
+- **Offers** records each checked URL, identifier, status, local price, currency, conversion rate and official rate date. Only verified in-stock offers with a USD price qualify for the international ranking.
 
 The workbook estimates standard shipping within the contiguous US before sales tax. It uses published thresholds and Noble Knight’s stated below-threshold maximum. Enter a Cardhaus quote in its yellow **Base estimate** cell for below-threshold comparisons. [Miniature Market](https://www.miniaturemarket.com/utility/customer-service) · [Cardhaus](https://www.cardhaus.com/shipping-faq/) · [Noble Knight](https://www.nobleknight.com/ordering-and-shipping)
 
@@ -35,7 +38,7 @@ tabletop-price-watch
 
 For PowerShell, use `py -m venv .venv` and `.\.venv\Scripts\Activate.ps1` for the first two steps.
 
-Each run writes `data/history/<timestamp>.csv` and updates `data/latest.csv` when it obtains verified observations. To refresh the shipped workbook with the same catalog, import `latest.csv` in Excel with **Source ID** set to Text. Copy the 30 data rows across all 12 columns and paste values into **Offers** starting at A2. The comparison matches rows by **Offer key** and Excel recalculates the formulas and chart.
+Each run writes `data/history/<timestamp>.csv` and updates `data/latest.csv` when it obtains verified observations. To refresh the shipped workbook with the same catalog, import `latest.csv` in Excel with **Source ID** and **FX date** set to Text. Import the price and rate columns as numbers using the decimal point from the CSV. Copy the 50 data rows across all 18 columns and paste values into **Offers** starting at A2. Excel recalculates the formulas and chart using **Offer key** to find each listing.
 
 For environments with the `@oai/artifact-tool` workspace package available, rebuild the workbook directly from the CSV. This also updates the workbook ranges if you change `catalog.json`.
 
@@ -45,7 +48,9 @@ node build_workbook.mjs data/latest.csv 'outputs/Tabletop Price Watch.xlsx'
 
 ## Matching and collection
 
-The watchlist pairs retailer URLs with publisher part numbers and UPCs. The scraper checks each page’s identifier against that list. Miniature Market supplies product microdata, Cardhaus supplies a structured offer and UPC, and Noble Knight lists multiple conditions. The Noble Knight parser takes the cheapest available listing marked `MINT/New` and uses the displayed sale price when present. A mismatch appears as **Review required** and is excluded from the price comparison. The initial ten editions are a curated watchlist.
+The watchlist pairs retailer URLs with publisher part numbers and barcodes. Miniature Market supplies product microdata, Cardhaus supplies a structured offer and UPC, and Noble Knight lists multiple conditions. The Noble Knight parser takes the cheapest available listing marked `MINT/New`. Philibert and Edinorog are checked against the exact barcode. The Russian parser also checks that the listing describes the English edition. A mismatch is recorded as **Review required**. Coverage is limited to the curated URL list, which can be edited in `catalog.json`. [Philibert](https://www.philibertnet.com/en/stonemaier-games/154440-finspan-850032180931.html) · [Edinorog](https://edinorog.shop/collection/wyrmspan)
+
+The EUR rate comes from the European Central Bank. For RUB, the scraper divides the Bank of Russia’s quoted USD nominal by its price in rubles. USD prices are rounded to cents. Each rate can be up to seven calendar days old to account for publication schedules. A missing or unusable rate leaves the local price visible and the USD conversion blank. [ECB reference rates](https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml) · [Bank of Russia feed](https://cbr.ru/development/sxml/)
 
 The collector checks `robots.txt` and applicable crawl delays before fetching a store. An access denial or HTTP 429 pauses that source for the run. Failed rows remain visible in the snapshot. The project only collects item identifiers, prices, stock and source links.
 
